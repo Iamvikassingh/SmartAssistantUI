@@ -1,7 +1,6 @@
 import streamlit as st
 import PyPDF2
 import google.generativeai as genai
-import openai
 import nltk
 from nltk.tokenize import sent_tokenize
 import os
@@ -12,7 +11,6 @@ from google.api_core.exceptions import ResourceExhausted
 nltk.download('punkt')
 load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 genai.configure(api_key=GOOGLE_API_KEY)
 
 # Add dropdown for Gemini model selection
@@ -25,8 +23,6 @@ model_options = [
 ]
 selected_model = st.sidebar.selectbox("Select Gemini Model", model_options, index=model_options.index("gemini-2.5-flash"))
 model = genai.GenerativeModel(selected_model)
-
-openai_client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 def extract_text(file):
     if file.type == "application/pdf":
@@ -48,17 +44,8 @@ def summarize_document(text):
         response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
-        st.warning(f"Gemini error: {e}. \n Trying OpenAI...")
-        try:
-            response = openai_client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=300
-            )
-            return response.choices[0].message.content.strip()
-        except Exception as e2:
-            st.error(f"OpenAI error: {e2}")
-            return "Unable to summarize. Please check your API keys, quota, or try again later."
+        st.error(f"Gemini error: {e}")
+        return "Unable to summarize. Please check your API key, quota, or try again later."
 
 def answer_question(document, question, history=[]):
     prompt = f"""You are a research assistant. Answer the following question based only on the provided document. 
@@ -72,17 +59,8 @@ If you answer, include a brief justification referencing the document (e.g., 'Th
         response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
-        st.warning(f"Gemini error: {e}. Trying OpenAI...")
-        try:
-            response = openai_client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=400
-            )
-            return response.choices[0].message.content.strip()
-        except Exception as e2:
-            st.error(f"OpenAI error: {e2}")
-            return "Unable to answer. Please check your API keys, quota, or try again later."
+        st.error(f"Gemini error: {e}")
+        return "Unable to answer. Please check your API key, quota, or try again later."
 
 def generate_logic_questions(document):
     prompt = f"""Read the following document and generate three logic-based or comprehension-focused questions that require reasoning. 
@@ -94,18 +72,8 @@ For each question, provide only the question text.
         questions = [q.strip("- ").strip() for q in response.text.strip().split('\n') if q.strip()]
         return questions[:3]
     except Exception as e:
-        st.warning(f"Gemini error: {e}. Trying OpenAI...")
-        try:
-            response = openai_client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=300
-            )
-            questions = [q.strip("- ").strip() for q in response.choices[0].message.content.strip().split('\n') if q.strip()]
-            return questions[:3]
-        except Exception as e2:
-            st.error(f"OpenAI error: {e2}")
-            return ["Unable to generate questions. Please check your API keys, quota, or try again later."] * 3
+        st.error(f"Gemini error: {e}")
+        return ["Unable to generate questions. Please check your API key, quota, or try again later."] * 3
 
 def evaluate_answer(document, question, user_answer):
     prompt = f"""Given the document and the user's answer to the question, evaluate the answer for correctness and provide feedback. 
@@ -118,17 +86,8 @@ Provide feedback with justification referencing the document and highlight the s
         response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
-        st.warning(f"Gemini error: {e}. Trying OpenAI...")
-        try:
-            response = openai_client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=300
-            )
-            return response.choices[0].message.content.strip()
-        except Exception as e2:
-            st.error(f"OpenAI error: {e2}")
-            return "Unable to evaluate. Please check your API keys, quota, or try again later."
+        st.error(f"Gemini error: {e}")
+        return "Unable to evaluate. Please check your API key, quota, or try again later."
 
 st.set_page_config(page_title="Smart Assistant for Research Summarization", layout="wide")
 st.title("Smart Assistant for Research Summarization")
@@ -160,7 +119,7 @@ if uploaded_file:
     
     elif mode == "Challenge Me":
         st.subheader("Challenge Me: Logic-Based Questions")
-        st.info("Note: This feature may quickly exhaust your Gemini API quota. If you hit quota errors, try switching to a different Gemini model, wait for quota reset, or ensure your OpenAI API key is set for fallback.")
+        st.info("Note: This feature may quickly exhaust your Gemini API quota. If you hit quota errors, try switching to a different Gemini model or wait for quota reset.")
         if "logic_questions" not in st.session_state or st.button("Generate New Questions"):
             with st.spinner("Generating questions..."):
                 st.session_state.logic_questions = generate_logic_questions(document_text)

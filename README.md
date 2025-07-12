@@ -13,7 +13,6 @@ It supports PDF and TXT uploads, generates concise summaries, answers free-form 
 - **Challenge Me:** The assistant generates three logic-based questions, evaluates your answers, and provides feedback with references to the document.
 - **Contextual Understanding:** All answers are grounded in the uploaded document, with highlighted supporting snippets.
 - **Model Selection:** Choose which Gemini model to use for answering questions (sidebar dropdown).
-- **OpenAI Fallback:** If Gemini quota is exhausted, the app will automatically use your OpenAI API key for fallback.
 - **Instructions Sidebar:** Step-by-step usage instructions are always available.
 
 ## How to Run
@@ -22,15 +21,14 @@ It supports PDF and TXT uploads, generates concise summaries, answers free-form 
    Make sure you have Python 3.8+ installed.  
    Install required packages:
    ```
-   pip install streamlit PyPDF2 google-generativeai openai nltk python-dotenv
+   pip install streamlit PyPDF2 google-generativeai nltk python-dotenv
    ```
 
-2. **Set up API Keys**  
+2. **Set up API Key**  
    - Create a `.env` file in the project directory.
-   - Add your Google Gemini API key and OpenAI API key:
+   - Add your Google Gemini API key:
      ```
      GOOGLE_API_KEY=your_google_gemini_api_key
-     OPENAI_API_KEY=your_openai_api_key
      ```
 
 3. **Run the app**  
@@ -48,17 +46,19 @@ It supports PDF and TXT uploads, generates concise summaries, answers free-form 
 ## File Structure
 
 - `SmartAssistantUI.py` — Main Streamlit app.
-- `.env` — Contains your API keys.
+- `.env` — Contains your API key.
 - `README.md` — This file.
 - `SmartAssistant.ipynb` — Architecture and workflow notebook (not required for running the app).
 
 ## Notes
 
-- If you hit Gemini quota limits, the app will automatically try OpenAI as a fallback.
+- If you hit Gemini quota limits, wait for quota reset or switch to a different Gemini model.
 - All answers and feedback are based strictly on the uploaded document.
 - If you see "missing ScriptRunContext!" warnings, you can ignore them.
 - For best results, use a paid API key or monitor your quota usage.
 
 ---
+**Demo:**  
+To see a walkthrough, run the app and follow the sidebar instructions.
 **Demo:**  
 To see a walkthrough, run the app and follow the sidebar instructions.
