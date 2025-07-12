@@ -1,5 +1,8 @@
 import streamlit as st
 import PyPDF2
+import docx  
+import pptx
+import pandas as pd
 import google.generativeai as genai
 import nltk
 from nltk.tokenize import sent_tokenize
@@ -32,6 +35,22 @@ def extract_text(file):
             page_text = page.extract_text()
             if page_text:
                 text += page_text + "\n"
+        return text
+    elif file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        doc = docx.Document(file)
+        text = "\n".join([para.text for para in doc.paragraphs])
+        return text
+    elif file.type == "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+        prs = pptx.Presentation(file)
+        text = ""
+        for slide in prs.slides:
+            for shape in slide.shapes:
+                if hasattr(shape, "text"):
+                    text += shape.text + "\n"
+        return text
+    elif file.type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+        df = pd.read_excel(file)
+        text = df.to_string()
         return text
     elif file.type == "text/plain":
         return file.read().decode("utf-8")
@@ -94,7 +113,16 @@ st.title("Smart Assistant for Research Summarization")
 st.markdown("<div style='text-align: left; font-size: 16px; color: #888;'>Built by Vikas Singh</div>", unsafe_allow_html=True)
 
 st.sidebar.header("Upload Document")
-uploaded_file = st.sidebar.file_uploader("Choose a PDF or TXT file", type=["pdf", "txt"])
+uploaded_file = st.sidebar.file_uploader(
+    "Choose a PDF, Word, PPT, Excel, or TXT file",
+    type=["pdf", "docx", "pptx", "xlsx", "txt"]
+)
+
+# Add this at the top after imports to handle Streamlit mobile network errors gracefully
+st.set_option('client.showErrorDetails', True)
+
+# Instruct users about mobile network issues
+st.sidebar.markdown("**Note:** If you see a 'Network Error' (AxiosError) on mobile, please check your internet connection and ensure your device can reach external APIs. Try switching to a stable WiFi or desktop browser for best results.")
 
 if uploaded_file:
     document_text = extract_text(uploaded_file)
@@ -140,7 +168,7 @@ if uploaded_file:
 st.sidebar.markdown("---")
 st.sidebar.markdown("**Instructions:**")
 st.sidebar.markdown("""
-1. Upload a PDF or TXT document.
+1. Upload a PDF, Word, PPT, Excel, or TXT document.
 2. View the auto summary.
 3. Choose 'Ask Anything' to ask questions about the document.
 4. Choose 'Challenge Me' to answer logic-based questions and get feedback.
@@ -154,7 +182,7 @@ To run the Smart Assistant software:
    streamlit run SmartAssistantUI.py
 
 3. A browser window will open with the assistant UI.  
-   - Use the sidebar to upload a PDF or TXT file.
+   - Use the sidebar to upload a document.
    - View the auto summary.
    - Choose "Ask Anything" or "Challenge Me" to interact with the assistant.
 
