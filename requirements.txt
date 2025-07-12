@@ -1,6 +1,9 @@
 streamlit
 PyPDF2
+python-docx
+python-pptx
+pandas
 google-generativeai
 nltk
 python-dotenv
-python-dotenv
+    
