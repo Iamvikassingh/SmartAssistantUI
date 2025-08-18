@@ -118,14 +118,21 @@ Provide feedback with justification referencing the document and highlight the s
         st.error(f"Gemini error: {e}")
         return "Unable to evaluate. Please check your API key, quota, or try again later."
 
-st.set_page_config(page_title="Smart Assistant for Research Summarization", layout="wide")
-st.title("Smart Assistant for Research Summarization")
+st.set_page_config(page_title="CodHelp Smart Assistant for Research Summarization", layout="wide")
+st.title("CodHelp Smart Assistant for Research Summarization")
 st.markdown("<div style='text-align: left; font-size: 16px; color: #888;'>Built by Vikas Singh</div>", unsafe_allow_html=True)
+
+if "file_type_stats" not in st.session_state:
+    st.session_state.file_type_stats = {}
+if "total_questions" not in st.session_state:
+    st.session_state.total_questions = {}
+if "generation_times" not in st.session_state:
+    st.session_state.generation_times = {}
 
 st.sidebar.header("Upload Document")
 uploaded_file = st.sidebar.file_uploader(
     "Choose a PDF, Word, PPT, Excel, TXT, or JSON file",
-    type=["pdf", "docx", "pptx", "xlsx", "txt", "json"]  # <-- Add "json" to allowed types
+    type=["pdf", "docx", "pptx", "xlsx", "txt", "json"]
 )
 
 # Add this at the top after imports to handle Streamlit mobile network errors gracefully
@@ -135,6 +142,9 @@ st.set_option('client.showErrorDetails', True)
 st.sidebar.markdown("**Note:** If you see a 'Network Error' (AxiosError) on mobile, please check your internet connection and ensure your device can reach external APIs. Try switching to a stable WiFi or desktop browser for best results.")
 
 if uploaded_file:
+    ext = uploaded_file.name.split('.')[-1].lower()
+    st.session_state.file_type_stats[ext] = st.session_state.file_type_stats.get(ext, 0) + 1
+
     document_text = extract_text(uploaded_file)
     st.subheader("Auto Summary (≤150 words)")
     with st.spinner("Summarizing document..."):
@@ -145,16 +155,25 @@ if uploaded_file:
     if "history" not in st.session_state:
         st.session_state.history = []
     
+    if ext not in st.session_state.total_questions:
+        st.session_state.total_questions[ext] = 0
+    if ext not in st.session_state.generation_times:
+        st.session_state.generation_times[ext] = []
+
     if mode == "Ask Anything":
         st.subheader("Ask Anything")
         user_question = st.text_input("Your question about the document:")
         if user_question:
+            start_time = time.time()
             with st.spinner("Generating answer..."):
                 answer = answer_question(document_text, user_question, st.session_state.history)
+            elapsed = time.time() - start_time
+            st.session_state.generation_times[ext].append(elapsed)
             st.markdown("**Answer:**")
             st.write(answer)
             st.session_state.history.append(f"Q: {user_question}\nA: {answer}")
-    
+            st.session_state.total_questions[ext] += 1
+
     elif mode == "Challenge Me":
         st.subheader("Challenge Me: Logic-Based Questions")
         st.info("Note: This feature may quickly exhaust your Gemini API quota. If you hit quota errors, try switching to a different Gemini model or wait for quota reset.")
@@ -168,22 +187,43 @@ if uploaded_file:
             st.markdown(f"**Question {idx+1}:** {q}")
             user_ans = st.text_input(f"Your answer to Q{idx+1}:", key=f"ans_{idx}")
             if user_ans:
+                start_time = time.time()
                 with st.spinner("Evaluating answer..."):
                     feedback = evaluate_answer(document_text, q, user_ans)
+                elapsed = time.time() - start_time
+                st.session_state.generation_times[ext].append(elapsed)
                 st.markdown("**Feedback:**")
                 st.write(feedback)
                 st.session_state.user_answers[idx] = user_ans
                 st.session_state.feedbacks[idx] = feedback
+                st.session_state.total_questions[ext] += 1
+
+# Show only the data table with file type, total questions, and avg. generation time
+if st.session_state.file_type_stats:
+    st.subheader("Assistant Data Table")
+    file_types = list(st.session_state.file_type_stats.keys())
+    total_questions = [st.session_state.total_questions.get(ft, 0) for ft in file_types]
+    avg_gen_time = [
+        round(sum(st.session_state.generation_times.get(ft, [])) / len(st.session_state.generation_times.get(ft, [])), 2)
+        if st.session_state.generation_times.get(ft, []) else 0
+        for ft in file_types
+    ]
+
+    st.dataframe({
+        "File Type": file_types,
+        "Total Questions": total_questions,
+        "Avg. Generation Time (s)": avg_gen_time
+    })
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("**Instructions:**")
 st.sidebar.markdown("""
-1. Upload a PDF, Word, PPT, Excel, or TXT document.
+1. Upload a PDF, Word, PPT, Excel, TXT, or JSON document.
 2. View the auto summary.
 3. Choose 'Ask Anything' to ask questions about the document.
 4. Choose 'Challenge Me' to answer logic-based questions and get feedback.
 
-To run the Smart Assistant software:
+To run the CodHelp Smart Assistant software:
 
 1. Open a terminal and navigate to your project directory:
    cd g:\react\aiProjectinternship
@@ -194,6 +234,62 @@ To run the Smart Assistant software:
 3. A browser window will open with the assistant UI.  
    - Use the sidebar to upload a document.
    - View the auto summary.
+   - Choose "Ask Anything" or "Challenge Me" to interact with the assistant.
+
+Make sure your `.env` file contains your GOOGLE_API_KEY.
+
+1. Open a terminal and navigate to your project directory:
+   cd g:\react\aiProjectinternship
+
+2. Run the Streamlit app:
+   streamlit run SmartAssistantUI.py
+
+3. A browser window will open with the assistant UI.  
+   - Use the sidebar to upload a document.
+   - View the auto summary.
+   - Choose "Ask Anything" or "Challenge Me" to interact with the assistant.
+
+Make sure your `.env` file contains your GOOGLE_API_KEY.
+
+   - Choose "Ask Anything" or "Challenge Me" to interact with the assistant.
+
+Make sure your `.env` file contains your GOOGLE_API_KEY.
+""")
+st.sidebar.markdown("**Instructions:**")
+st.sidebar.markdown("""
+1. Upload a PDF, Word, PPT, Excel, TXT, or JSON document.
+2. View the auto summary.
+3. Choose 'Ask Anything' to ask questions about the document.
+4. Choose 'Challenge Me' to answer logic-based questions and get feedback.
+
+To run the CodHelp Smart Assistant software:
+
+1. Open a terminal and navigate to your project directory:
+   cd g:\react\aiProjectinternship
+
+2. Run the Streamlit app:
+   streamlit run SmartAssistantUI.py
+
+3. A browser window will open with the assistant UI.  
+   - Use the sidebar to upload a document.
+   - View the auto summary.
+   - Choose "Ask Anything" or "Challenge Me" to interact with the assistant.
+
+Make sure your `.env` file contains your GOOGLE_API_KEY.
+
+1. Open a terminal and navigate to your project directory:
+   cd g:\react\aiProjectinternship
+
+2. Run the Streamlit app:
+   streamlit run SmartAssistantUI.py
+
+3. A browser window will open with the assistant UI.  
+   - Use the sidebar to upload a document.
+   - View the auto summary.
+   - Choose "Ask Anything" or "Challenge Me" to interact with the assistant.
+
+Make sure your `.env` file contains your GOOGLE_API_KEY.
+
    - Choose "Ask Anything" or "Challenge Me" to interact with the assistant.
 
 Make sure your `.env` file contains your GOOGLE_API_KEY.
