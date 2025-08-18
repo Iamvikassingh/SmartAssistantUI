@@ -10,6 +10,7 @@ import os
 from dotenv import load_dotenv
 import time
 from google.api_core.exceptions import ResourceExhausted
+import json  # <-- Add this import
 
 nltk.download('punkt')
 load_dotenv()
@@ -54,6 +55,15 @@ def extract_text(file):
         return text
     elif file.type == "text/plain":
         return file.read().decode("utf-8")
+    elif file.type == "application/json":
+        try:
+            file_content = file.read().decode("utf-8")
+            data = json.loads(file_content)
+            # Convert JSON to a readable string (pretty print)
+            text = json.dumps(data, indent=2)
+            return text
+        except Exception as e:
+            return f"Error reading JSON: {e}"
     else:
         return ""
 
@@ -114,8 +124,8 @@ st.markdown("<div style='text-align: left; font-size: 16px; color: #888;'>Built 
 
 st.sidebar.header("Upload Document")
 uploaded_file = st.sidebar.file_uploader(
-    "Choose a PDF, Word, PPT, Excel, or TXT file",
-    type=["pdf", "docx", "pptx", "xlsx", "txt"]
+    "Choose a PDF, Word, PPT, Excel, TXT, or JSON file",
+    type=["pdf", "docx", "pptx", "xlsx", "txt", "json"]  # <-- Add "json" to allowed types
 )
 
 # Add this at the top after imports to handle Streamlit mobile network errors gracefully
