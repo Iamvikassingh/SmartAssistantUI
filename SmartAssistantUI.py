@@ -139,18 +139,6 @@ uploaded_file = st.sidebar.file_uploader(
 st.set_option('client.showErrorDetails', True)
 
 
-# Hosted dashboard link (opens in new tab)
-st.sidebar.markdown(
-    "<center>"
-    "<div style='margin-top:8px; margin-bottom:8px;'>"
-    "<a href='https://codhelassistantdashboard.streamlit.app/' target='_blank' rel='noopener'>"
-    "<button style='background-color:#0e6fff;color:#fff;padding:8px 12px;border-radius:6px;border:none;cursor:pointer;'>Open Hosted Dashboard</button>"
-    "</a>"
-    "</div>"
-    "</center>",
-    unsafe_allow_html=True
-)
-
 # Instruct users about mobile network issues
 st.sidebar.markdown("**Note:** If you see a 'Network Error' (AxiosError) on mobile, please check your internet connection and ensure your device can reach external APIs. Try switching to a stable WiFi or desktop browser for best results.")
 

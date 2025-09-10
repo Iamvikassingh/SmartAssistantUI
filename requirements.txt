@@ -4,6 +4,7 @@ python-docx
 python-pptx
 pandas
 google-generativeai
+google-api-core
 nltk
 python-dotenv
-    
+openpyxl
