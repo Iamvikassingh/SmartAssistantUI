@@ -118,8 +118,8 @@ Provide feedback with justification referencing the document and highlight the s
         st.error(f"Gemini error: {e}")
         return "Unable to evaluate. Please check your API key, quota, or try again later."
 
-st.set_page_config(page_title="CodHelp Smart Assistant for Research Summarization", layout="wide")
-st.title("CodHelp Smart Assistant for Research Summarization")
+st.set_page_config(page_title="📊 CodHelp Smart Assistant for Research Summarization", layout="wide")
+st.title("📊 CodHelp Smart Assistant for Research Summarization")
 st.markdown("<div style='text-align: left; font-size: 16px; color: #888;'>Built by Vikas Singh</div>", unsafe_allow_html=True)
 
 if "file_type_stats" not in st.session_state:
